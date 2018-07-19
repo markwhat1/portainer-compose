@@ -173,5 +173,3 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
-networks:
-  default:

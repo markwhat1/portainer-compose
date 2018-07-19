@@ -1,0 +1,209 @@
+version: "3.6"
+services:
+  portainer:
+    image: portainer/portainer
+    container_name: portainer
+    restart: unless-stopped
+    # command: --templates https://github.com/portainer/templates
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${USERDIR}/docker/portainer/data:/data
+      - ${USERDIR}/docker/shared:/shared
+    environment:
+      - TZ=${TZ}
+  organizr:
+    container_name: organizr
+    restart: unless-stopped
+    image: lsiocommunity/organizr
+    volumes:
+      - ${USERDIR}/docker/organizr:/config
+      - ${USERDIR}/docker/shared:/shared
+    ports:
+      - "8080:8080"
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+  watchtower:
+    container_name: watchtower
+    restart: unless-stopped
+    image: v2tec/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --schedule "0 0 4 * * *" --cleanup
+  homeassistant:
+    container_name: homeassistant
+    restart: unless-stopped
+    image: homeassistant/home-assistant
+    # devices:
+    #   - /dev/ttyUSB0:/dev/ttyUSB0
+    #   - /dev/ttyUSB1:/dev/ttyUSB1
+    #   - /dev/ttyACM0:/dev/ttyACM0
+    volumes:
+      - ${USERDIR}/docker/homeassistant:/config
+      - /etc/localtime:/etc/localtime:ro
+      - ${USERDIR}/docker/shared:/shared
+    ports:
+      - "8123:8123"
+    privileged: true
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+  transmission-vpn:
+    container_name: transmission-vpn
+    image: haugene/transmission-openvpn
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun
+    restart: unless-stopped
+    ports:
+    - "9091:9091"
+    dns:
+      - 1.1.1.1
+      - 1.0.0.1
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${USERDIR}/docker/transmission-vpn:/data
+      - ${USERDIR}/docker/shared:/shared
+      - ${USERDIR}/Downloads:/data/watch
+      - ${USERDIR}/Downloads/completed:/data/completed
+      - ${USERDIR}/Downloads/incomplete:/data/incomplete
+    environment:
+      - OPENVPN_PROVIDER=PIA
+      - OPENVPN_USERNAME=${PIA_username}
+      - OPENVPN_PASSWORD=${PIA_password}
+      - OPENVPN_CONFIG="US Houston" 
+      - OPENVPN_OPTS=--inactive 3600 --ping 10 --ping-exit 60
+      - LOCAL_NETWORK=192.168.1.0/24
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - TRANSMISSION_RPC_AUTHENTICATION_REQUIRED=true
+      - TRANSMISSION_RPC_HOST_WHITELIST="127.0.0.1,192.168.*.*"
+      - TRANSMISSION_RPC_PASSWORD=markwhat
+      - TRANSMISSION_RPC_USERNAME=yamaha154
+      - TRANSMISSION_UMASK=002
+      - TRANSMISSION_RATIO_LIMIT=0.10
+      - TRANSMISSION_RATIO_LIMIT_ENABLED=true
+  nzbget:
+    image: linuxserver/nzbget
+    container_name: nzbget
+    volumes:
+      - ${USERDIR}/docker/sabnzbd:/config
+      - ${USERDIR}/Downloads:/downloads
+      - ${USERDIR}/Downloads/incomplete:/incomplete-downloads
+      - ${USERDIR}/docker/shared:/shared
+    ports:
+      - "6789:6789"
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+  radarr:
+    image: linuxserver/radarr
+    container_name: radarr
+    volumes:
+      - ${USERDIR}/docker/radarr:/config
+      - ${USERDIR}/Downloads/completed:/downloads
+      - ${MEDIA_PATH}/media/movies:/movies
+      - "/etc/localtime:/etc/localtime:ro"
+      - ${USERDIR}/docker/shared:/shared
+    ports:
+      - "7878:7878"
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+  sonarr:
+    image: "linuxserver/sonarr"
+    container_name: "sonarr"
+    volumes:
+      - ${USERDIR}/docker/sonarr:/config
+      - ${USERDIR}/Downloads/completed:/downloads
+      - ${MEDIA_PATH}/media/tvshows:/tv
+      - "/etc/localtime:/etc/localtime:ro"
+      - ${USERDIR}/docker/shared:/shared
+    ports:
+        - "8989:8989"
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+  plexms:
+    container_name: plexms
+    restart: unless-stopped
+    image: plexinc/pms-docker
+    network_mode: host # Try not using (use above instead)
+    volumes:
+      - ${USERDIR}/docker/plexms:/config
+      - ${USERDIR}/Downloads/plex_tmp:/transcode
+      - ${MEDIA_PATH}/media:/media
+      - ${USERDIR}/docker/shared:/shared
+    ports:
+      - "32400:32400/tcp"
+      - "3005:3005/tcp"
+      - "8324:8324/tcp"
+      - "32469:32469/tcp"
+      - "1900:1900/udp"
+      - "32410:32410/udp"
+      - "32412:32412/udp"
+      - "32413:32413/udp"
+      - "32414:32414/udp"
+    environment:
+      - TZ=${TZ}
+      - HOSTNAME="Docker Plex"
+      - PLEX_CLAIM="claim-AyGxMn8G3u98sy7CPNWR"
+      - PLEX_UID=${PUID}
+      - PLEX_GID=${PGID}
+      - ADVERTISE_IP="http://192.168.1.60:32400/"
+      - ALLOWED_NETWORKS=192.168.1.0/255.255.255.0
+  tautulli:
+    container_name: tautulli
+    restart: unless-stopped
+    image: linuxserver/tautulli
+    volumes:
+      - ${USERDIR}/docker/tautulli/config:/config
+      - ${USERDIR}/docker/tautulli/logs:/logs:ro
+      - ${USERDIR}/docker/shared:/shared
+    ports:
+      - "8181:8181"
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+  ombi:
+    container_name: ombi
+    restart: unless-stopped
+    image: linuxserver/ombi
+    volumes:
+      - ${USERDIR}/docker/ombi:/config
+      - ${USERDIR}/docker/shared:/shared
+    ports:
+      - "3579:3579"
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+  hydra:
+    image: linuxserver/hydra
+    container_name: hydra
+    volumes:
+      - ${USERDIR}/docker/hydra:/config
+      - ${USERDIR}/Downloads:/downloads
+      - ${USERDIR}/docker/shared:/shared
+    ports:
+      - "8088:8088"
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+networks:
+  default:

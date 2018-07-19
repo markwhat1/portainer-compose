@@ -1,18 +1,5 @@
 version: "2"
 services:
-  portainer:
-    image: portainer/portainer
-    container_name: portainer
-    restart: unless-stopped
-    # command: --templates https://github.com/portainer/templates
-    ports:
-      - "9000:9000"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ${USERDIR}/docker/portainer/data:/data
-      - ${USERDIR}/docker/shared:/shared
-    environment:
-      - TZ=${TZ}
   organizr:
     container_name: organizr
     restart: unless-stopped
@@ -140,7 +127,7 @@ services:
     environment:
       - TZ=${TZ}
       - HOSTNAME="Docker Plex"
-      - PLEX_CLAIM="claim-AyGxMn8G3u98sy7CPNWR"
+      - PLEX_CLAIM="claim-uqKjbLMm9S7z9koxRisu"
       - PLEX_UID=${PUID}
       - PLEX_GID=${PGID}
       - ADVERTISE_IP="http://192.168.1.60:32400/"
